@@ -14,6 +14,9 @@
 
   const DATA = window.HONORED_DATA;
   const Store = window.HonoredStore;
+  const Auth = window.HonoredAuth;
+  const Stats = window.HonoredStats;
+  const Recs = window.HonoredRecs;
   const app = document.getElementById("app");
   const navBadge = document.getElementById("navBadge");
 
@@ -431,6 +434,477 @@
   }
 
   // ====================================================
+  //  화면 4. 월별 인기 여행지 (검색량 순위 + 관리자 CRUD)
+  // ====================================================
+  let monthlyMonth = null; // 화면에서 선택된 달 (처음엔 이번 달)
+
+  async function renderMonthly() {
+    setActiveNav("monthly");
+    if (monthlyMonth == null) monthlyMonth = new Date().getMonth() + 1;
+    const month = monthlyMonth;
+    const user = Auth ? await Auth.getUser() : null;
+
+    // 그 달의 검색량 읽기
+    let stats = [];
+    let loadError = false;
+    try {
+      stats = Stats ? await Stats.getMonthlyStats(month) : [];
+    } catch (e) {
+      loadError = true;
+      console.error("[Honored] 순위 읽기 실패:", e);
+    }
+
+    // 여행지 id → 검색량 (없으면 undefined)
+    const volById = {};
+    stats.forEach((s) => (volById[s.destination_id] = s.search_volume));
+
+    // 여행지 6곳 전체를 검색량 내림차순으로 정렬 (데이터 없으면 맨 뒤)
+    const ranked = DATA.destinations
+      .map((d) => ({ d: d, volume: volById[d.id] == null ? null : volById[d.id] }))
+      .sort((a, b) => (b.volume == null ? -1 : b.volume) - (a.volume == null ? -1 : a.volume));
+
+    const monthOptions = [];
+    for (let mo = 1; mo <= 12; mo++) {
+      monthOptions.push(`<option value="${mo}" ${mo === month ? "selected" : ""}>${mo}월</option>`);
+    }
+
+    const hasAny = stats.length > 0;
+    let listHTML;
+    if (loadError) {
+      listHTML = `<div class="empty-state"><div class="es-emoji">⚠️</div>
+        <h3>순위를 불러오지 못했어요</h3>
+        <p>인터넷 연결을 확인하고 잠시 후 새로고침해 주세요.</p></div>`;
+    } else if (hasAny) {
+      listHTML = `<div class="dest-grid">${ranked.map(rankCardHTML).join("")}</div>`;
+    } else {
+      listHTML = `<div class="empty-state"><div class="es-emoji">📊</div>
+        <h3>${month}월 검색량이 아직 없어요</h3>
+        <p>${user ? "아래 관리자 칸에서 검색량을 입력하면 순위가 만들어집니다." : "관리자가 검색량을 입력하면 순위가 표시됩니다."}</p></div>`;
+    }
+
+    app.innerHTML = `
+      <section class="itin-head">
+        <div class="container">
+          <h1>월별 인기 여행지</h1>
+          <p>검색이 많은 여행지를 달별 순위로 보여드려요.</p>
+        </div>
+      </section>
+      <section class="section">
+        <div class="container">
+          <div class="itin-toolbar">
+            <label for="monthSelect" style="font-weight:700">월 선택</label>
+            <select class="day-select" id="monthSelect" aria-label="월 선택">${monthOptions.join("")}</select>
+            <span class="spacer"></span>
+            <span class="dest-count">${month}월 인기 순위</span>
+          </div>
+
+          ${listHTML}
+
+          ${adminPanelHTML(user, month, volById)}
+        </div>
+      </section>`;
+
+    wireMonthly(user, month);
+  }
+
+  function rankCardHTML(entry, index) {
+    const d = entry.d;
+    const rank = index + 1;
+    const volText = entry.volume == null ? "데이터 없음" : "검색량 " + entry.volume.toLocaleString();
+    return `
+      <article class="dest-card" data-dest="${d.id}" role="link" tabindex="0">
+        <div class="dest-cover" style="background:${d.gradient}">
+          <span class="cover-region">${rank}위 · ${esc(d.region)}</span>
+          <span class="cover-name">${esc(d.name)}</span>
+          <span class="cover-emoji">${d.emoji}</span>
+        </div>
+        <div class="dest-body">
+          <p class="dest-tagline">${esc(d.tagline)}</p>
+          <div class="dest-foot">
+            <span class="dest-count">${volText}</span>
+            <span class="dest-go">둘러보기 →</span>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function adminPanelHTML(user, month, volById) {
+    if (!user) {
+      return `
+        <div class="share-card" style="margin-top:28px">
+          <h3>관리자 로그인</h3>
+          <p>여행지 검색량을 입력·수정하려면 관리자 로그인이 필요합니다.
+             (일반 방문자는 로그인 없이 순위를 볼 수 있어요.)</p>
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:360px">
+            <input class="day-select" id="adminEmail" type="email"
+                   placeholder="이메일" autocomplete="username" style="width:100%" />
+            <input class="day-select" id="adminPw" type="password"
+                   placeholder="비밀번호" autocomplete="current-password" style="width:100%" />
+            <button class="btn btn-primary" id="loginBtn">로그인</button>
+            <span id="loginMsg" style="color:#b13b2e;font-size:15px"></span>
+          </div>
+        </div>`;
+    }
+
+    const rows = DATA.destinations
+      .map((d) => {
+        const v = volById[d.id];
+        const has = v != null;
+        return `
+          <div class="itin-item">
+            <div class="itin-info">
+              <div class="ii-name">${d.emoji} ${esc(d.name)}</div>
+              <div class="ii-meta">${has ? "현재 " + v.toLocaleString() : "아직 입력 안 됨"}</div>
+            </div>
+            <div class="itin-controls">
+              <input class="day-select" type="number" min="0" step="1"
+                     data-vol="${d.id}" value="${has ? v : ""}" placeholder="검색량" style="width:120px" />
+              <button class="btn btn-sm btn-primary" data-save="${d.id}">저장</button>
+              <button class="icon-btn danger" data-del="${d.id}" ${has ? "" : "disabled"} aria-label="삭제">✕</button>
+            </div>
+          </div>`;
+      })
+      .join("");
+
+    return `
+      <div class="share-card" style="margin-top:28px">
+        <h3>관리자 — ${month}월 검색량 입력</h3>
+        <p><strong>${esc(user.email)}</strong> 님으로 로그인됨.
+           숫자를 넣고 <b>저장</b>하면 위 순위에 바로 반영돼요. (✕ = 그 달 데이터 삭제)</p>
+        <ul class="day-items" style="list-style:none;margin:0;padding:0">${rows}</ul>
+        <div class="share-actions" style="margin-top:16px">
+          <button class="btn btn-outline" id="logoutBtn">로그아웃</button>
+        </div>
+      </div>`;
+  }
+
+  function wireMonthly(user, month) {
+    const sel = app.querySelector("#monthSelect");
+    if (sel) {
+      sel.addEventListener("change", (e) => {
+        monthlyMonth = parseInt(e.target.value, 10);
+        renderMonthly();
+      });
+    }
+
+    // 순위 카드 클릭 → 여행지 상세로 이동
+    app.querySelectorAll("[data-dest]").forEach((card) => {
+      card.addEventListener("click", () => {
+        location.hash = "#/destination/" + card.dataset.dest;
+      });
+    });
+
+    if (!Auth) return;
+
+    if (!user) {
+      app.querySelector("#loginBtn").addEventListener("click", async () => {
+        const email = app.querySelector("#adminEmail").value.trim();
+        const pw = app.querySelector("#adminPw").value;
+        const msg = app.querySelector("#loginMsg");
+        msg.textContent = "";
+        if (!email || !pw) {
+          msg.textContent = "이메일과 비밀번호를 입력하세요.";
+          return;
+        }
+        try {
+          await Auth.signIn(email, pw);
+          toast("로그인 성공 ✓");
+          renderMonthly();
+        } catch (e) {
+          msg.textContent = "로그인에 실패했어요. 이메일과 비밀번호를 다시 확인해 주세요.";
+          console.error("[Honored] 로그인 실패:", e);
+        }
+      });
+      return;
+    }
+
+    // 로그인 상태: 로그아웃 + 저장(추가/수정) + 삭제
+    app.querySelector("#logoutBtn").addEventListener("click", async () => {
+      await Auth.signOut();
+      toast("로그아웃했어요");
+      renderMonthly();
+    });
+
+    app.querySelectorAll("[data-save]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.save;
+        const input = app.querySelector(`[data-vol="${id}"]`);
+        const val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 0) {
+          toast("0 이상의 숫자를 입력하세요");
+          return;
+        }
+        try {
+          await Stats.upsertStat(month, id, val);
+          toast("저장했어요 ✓");
+          renderMonthly();
+        } catch (e) {
+          toast("저장 실패 — 로그인 상태를 확인해 주세요");
+          console.error("[Honored] 저장 실패:", e);
+        }
+      });
+    });
+
+    app.querySelectorAll("[data-del]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.del;
+        try {
+          await Stats.deleteStat(month, id);
+          toast("삭제했어요");
+          renderMonthly();
+        } catch (e) {
+          toast("삭제 실패 — 로그인 상태를 확인해 주세요");
+          console.error("[Honored] 삭제 실패:", e);
+        }
+      });
+    });
+  }
+
+  // ====================================================
+  //  화면 5. 여행지 한 줄 추천 (로그인 사용자별 CRUD)
+  // ====================================================
+  let recEditingId = null; // 지금 수정 중인 추천의 id (없으면 null)
+
+  async function renderRecommend() {
+    setActiveNav("recommend");
+
+    // 1) 로딩 상태 먼저 보여주기
+    app.innerHTML = `
+      <section class="itin-head">
+        <div class="container">
+          <h1>여행지 한 줄 추천</h1>
+          <p>여행지에 대한 한 줄 추천을 남기고, 다른 사람 추천도 구경해보세요.</p>
+        </div>
+      </section>
+      <section class="section">
+        <div class="container"><p class="dest-count">불러오는 중…</p></div>
+      </section>`;
+
+    // 2) 로그인 사용자 + 추천 목록 읽기
+    const user = Auth ? await Auth.getUser() : null;
+    let recs = [];
+    let loadError = false;
+    try {
+      recs = Recs ? await Recs.list() : [];
+    } catch (e) {
+      loadError = true;
+      console.error("[Honored] 추천 읽기 실패:", e);
+    }
+
+    // 3) 추가 폼(로그인 시) 또는 로그인 안내(비로그인)
+    const formHTML = user ? addFormHTML() : loginPromptHTML();
+
+    // 4) 목록 / 빈 상태 / 실패 상태
+    let listHTML;
+    if (loadError) {
+      listHTML = `<div class="empty-state"><div class="es-emoji">⚠️</div>
+        <h3>추천을 불러오지 못했어요</h3>
+        <p>인터넷 연결을 확인하고 새로고침해 주세요.</p></div>`;
+    } else if (!recs.length) {
+      listHTML = `<div class="empty-state"><div class="es-emoji">💬</div>
+        <h3>아직 추천이 없어요</h3>
+        <p>${user ? "위에서 첫 추천을 남겨보세요!" : "로그인하고 첫 추천을 남겨보세요!"}</p></div>`;
+    } else {
+      listHTML = `<div class="place-grid">${recs.map((r) => recItemHTML(r, user)).join("")}</div>`;
+    }
+
+    app.innerHTML = `
+      <section class="itin-head">
+        <div class="container">
+          <h1>여행지 한 줄 추천</h1>
+          <p>여행지에 대한 한 줄 추천을 남기고, 다른 사람 추천도 구경해보세요.</p>
+        </div>
+      </section>
+      <section class="section">
+        <div class="container">
+          ${formHTML}
+          <div class="section-head" style="margin:32px 0 18px"><h2 style="font-size:24px">모두의 추천</h2></div>
+          ${listHTML}
+        </div>
+      </section>`;
+
+    wireRecommend(user);
+  }
+
+  function addFormHTML() {
+    const opts = DATA.destinations
+      .map((d) => `<option value="${d.id}">${d.emoji} ${esc(d.name)}</option>`)
+      .join("");
+    return `
+      <div class="share-card">
+        <h3>추천 남기기</h3>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:520px">
+          <select class="day-select" id="recDest" aria-label="여행지 선택">${opts}</select>
+          <textarea class="share-text" id="recComment" maxlength="200"
+            style="min-height:90px" placeholder="이 여행지의 한 줄 추천을 적어주세요 (최대 200자)"></textarea>
+          <div class="share-actions">
+            <button class="btn btn-primary" id="recAddBtn">추천 등록</button>
+            <span id="recMsg" style="color:#b13b2e;align-self:center"></span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function loginPromptHTML() {
+    return `
+      <div class="share-card">
+        <h3>로그인하면 추천을 남길 수 있어요</h3>
+        <p>지금은 다른 사람들의 추천을 읽을 수 있어요. 직접 추천을 남기려면 로그인하세요.</p>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:360px">
+          <input class="day-select" id="recEmail" type="email"
+                 placeholder="이메일" autocomplete="username" style="width:100%" />
+          <input class="day-select" id="recPw" type="password"
+                 placeholder="비밀번호" autocomplete="current-password" style="width:100%" />
+          <button class="btn btn-primary" id="recLoginBtn">로그인</button>
+          <span id="recLoginMsg" style="color:#b13b2e;font-size:15px"></span>
+        </div>
+      </div>`;
+  }
+
+  function recItemHTML(r, user) {
+    const d = DATA.getDestination(r.destination_id);
+    const destName = d ? `${d.emoji} ${esc(d.name)}` : esc(r.destination_id);
+    const isOwner = !!(user && r.owner_id === user.id);
+
+    // 이 추천을 수정 중이면 → 편집용 입력칸
+    if (recEditingId === r.id) {
+      return `
+        <div class="place-card" data-rec="${r.id}">
+          <div class="place-top"><span class="place-name">${destName}</span></div>
+          <textarea class="share-text" data-edit-input maxlength="200"
+            style="min-height:80px">${esc(r.comment)}</textarea>
+          <div class="share-actions">
+            <button class="btn btn-sm btn-primary" data-edit-save="${r.id}">저장</button>
+            <button class="btn btn-sm btn-outline" data-edit-cancel="1">취소</button>
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="place-card" data-rec="${r.id}">
+        <div class="place-top">
+          <span class="place-name">${destName}</span>
+          ${isOwner ? `<span class="cat-pill" style="background:var(--cream-2);color:var(--green-800)">내 추천</span>` : ""}
+        </div>
+        <p class="place-desc">${esc(r.comment)}</p>
+        ${
+          isOwner
+            ? `<div class="share-actions">
+                 <button class="btn btn-sm btn-outline" data-edit="${r.id}">수정</button>
+                 <button class="btn btn-sm" data-del-rec="${r.id}"
+                   style="border:2px solid #b13b2e;color:#b13b2e;background:#fff">삭제</button>
+               </div>`
+            : ""
+        }
+      </div>`;
+  }
+
+  function wireRecommend(user) {
+    if (!Auth) return;
+
+    // 비로그인: 로그인 폼만 연결
+    if (!user) {
+      const btn = app.querySelector("#recLoginBtn");
+      if (btn) {
+        btn.addEventListener("click", async () => {
+          const email = app.querySelector("#recEmail").value.trim();
+          const pw = app.querySelector("#recPw").value;
+          const msg = app.querySelector("#recLoginMsg");
+          msg.textContent = "";
+          if (!email || !pw) {
+            msg.textContent = "이메일과 비밀번호를 입력하세요.";
+            return;
+          }
+          try {
+            await Auth.signIn(email, pw);
+            toast("로그인 성공 ✓");
+            renderRecommend();
+          } catch (e) {
+            msg.textContent = "로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.";
+            console.error("[Honored] 로그인 실패:", e);
+          }
+        });
+      }
+      return;
+    }
+
+    // 로그인: 추가
+    const addBtn = app.querySelector("#recAddBtn");
+    if (addBtn) {
+      addBtn.addEventListener("click", async () => {
+        const dest = app.querySelector("#recDest").value;
+        const comment = app.querySelector("#recComment").value.trim();
+        const msg = app.querySelector("#recMsg");
+        msg.textContent = "";
+        if (!comment) {
+          msg.textContent = "추천 내용을 입력하세요.";
+          return;
+        }
+        try {
+          await Recs.add(dest, comment);
+          toast("추천을 등록했어요 ✓");
+          renderRecommend();
+        } catch (e) {
+          msg.textContent = "등록에 실패했어요. 잠시 후 다시 시도해 주세요.";
+          console.error("[Honored] 추천 등록 실패:", e);
+        }
+      });
+    }
+
+    // 수정 시작
+    app.querySelectorAll("[data-edit]").forEach((b) => {
+      b.addEventListener("click", () => {
+        recEditingId = parseInt(b.dataset.edit, 10);
+        renderRecommend();
+      });
+    });
+    // 수정 취소
+    const cancelBtn = app.querySelector("[data-edit-cancel]");
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => {
+        recEditingId = null;
+        renderRecommend();
+      });
+    }
+    // 수정 저장
+    const saveBtn = app.querySelector("[data-edit-save]");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", async () => {
+        const id = parseInt(saveBtn.dataset.editSave, 10);
+        const comment = app.querySelector("[data-edit-input]").value.trim();
+        if (!comment) {
+          toast("내용을 입력하세요");
+          return;
+        }
+        try {
+          await Recs.update(id, comment);
+          recEditingId = null;
+          toast("수정했어요 ✓");
+          renderRecommend();
+        } catch (e) {
+          toast("수정 실패 — 본인 글만 수정할 수 있어요");
+          console.error("[Honored] 수정 실패:", e);
+        }
+      });
+    }
+    // 삭제
+    app.querySelectorAll("[data-del-rec]").forEach((b) => {
+      b.addEventListener("click", async () => {
+        const id = parseInt(b.dataset.delRec, 10);
+        if (!confirm("이 추천을 삭제할까요?")) return;
+        try {
+          await Recs.remove(id);
+          toast("삭제했어요");
+          renderRecommend();
+        } catch (e) {
+          toast("삭제 실패 — 본인 글만 삭제할 수 있어요");
+          console.error("[Honored] 삭제 실패:", e);
+        }
+      });
+    });
+  }
+
+  // ====================================================
   //  라우터
   // ====================================================
   async function router() {
@@ -440,6 +914,10 @@
     const m = hash.match(/^#\/destination\/(.+)$/);
     if (m) {
       await renderDestination(decodeURIComponent(m[1]));
+    } else if (hash.startsWith("#/monthly")) {
+      await renderMonthly();
+    } else if (hash.startsWith("#/recommend")) {
+      await renderRecommend();
     } else if (hash.startsWith("#/itinerary")) {
       await renderItinerary();
     } else {

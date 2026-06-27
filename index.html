@@ -25,6 +25,8 @@
         </a>
         <nav class="main-nav" aria-label="주요 메뉴">
           <a href="#/" class="nav-link" data-nav="home">여행지 둘러보기</a>
+          <a href="#/monthly" class="nav-link" data-nav="monthly">월별 추천</a>
+          <a href="#/recommend" class="nav-link" data-nav="recommend">추천 한마디</a>
           <a href="#/itinerary" class="nav-link nav-itinerary" data-nav="itinerary">
             내 일정표
             <span class="badge" id="navBadge" hidden>0</span>
@@ -50,6 +52,12 @@
     <!-- 데이터 → 저장소 → 앱 순서로 불러옵니다 (빌드 불필요) -->
     <script src="js/data.js"></script>
     <script src="js/store.js"></script>
+    <!-- Supabase 라이브러리(CDN) → 우리 연결 → 로그인 (app.js 보다 먼저) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/stats.js"></script>
+    <script src="js/recommendations.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

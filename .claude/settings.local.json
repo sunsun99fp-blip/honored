@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(node \"C:/Users/kkksu/OneDrive/Desktop/ai수업/.claude/skills/semiclass-brand-vibecoding-coach/scripts/progress.mjs\" scan \"C:/Users/kkksu/OneDrive/Desktop/ai수업\")",
-      "PowerShell(node \"C:\\\\Users\\\\kkksu\\\\OneDrive\\\\Desktop\\\\ai����\\\\.claude\\\\skills\\\\semiclass-brand-vibecoding-coach\\\\scripts\\\\progress.mjs\" scan \"C:\\\\Users\\\\kkksu\\\\OneDrive\\\\Desktop\\\\ai����\")"
+      "PowerShell(node \"C:\\\\Users\\\\kkksu\\\\OneDrive\\\\Desktop\\\\ai����\\\\.claude\\\\skills\\\\semiclass-brand-vibecoding-coach\\\\scripts\\\\progress.mjs\" scan \"C:\\\\Users\\\\kkksu\\\\OneDrive\\\\Desktop\\\\ai����\")",
+      "PowerShell(foreach \\($c in @\\('node','npm','npx','python','py'\\)\\) { $f = Get-Command $c -ErrorAction SilentlyContinue; if \\($f\\) { Write-Output \"$c => $\\($f.Source\\)\" } else { Write-Output \"$c => 없음\" } })",
+      "PowerShell($out = python --version 2>&1; Write-Output \"결과: $out\")",
+      "Bash(\"/c/Program Files/Git/cmd/git.exe\" status --short)",
+      "Bash(\"/c/Program Files/Git/cmd/git.exe\" add -A)",
+      "Bash('/c/Program Files/Git/cmd/git.exe' commit -m '월별 인기 여행지 + 여행지 한 줄 추천\\(Supabase CRUD\\) 기능 추가 *)",
+      "Bash(\"/c/Program Files/Git/cmd/git.exe\" push origin main)"
     ]
   }
 }
