@@ -8,7 +8,8 @@
       "Bash(\"/c/Program Files/Git/cmd/git.exe\" status --short)",
       "Bash(\"/c/Program Files/Git/cmd/git.exe\" add -A)",
       "Bash('/c/Program Files/Git/cmd/git.exe' commit -m '월별 인기 여행지 + 여행지 한 줄 추천\\(Supabase CRUD\\) 기능 추가 *)",
-      "Bash(\"/c/Program Files/Git/cmd/git.exe\" push origin main)"
+      "Bash(\"/c/Program Files/Git/cmd/git.exe\" push origin main)",
+      "Bash('/c/Program Files/Git/cmd/git.exe' commit -m '디자인 다듬기: 버튼/카드/히어로/헤더 정돈 + 포커스 접근성 *)"
     ]
   }
 }
