@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node \"C:/Users/kkksu/OneDrive/Desktop/ai수업/.claude/skills/semiclass-brand-vibecoding-coach/scripts/progress.mjs\" scan \"C:/Users/kkksu/OneDrive/Desktop/ai수업\")",
+      "PowerShell(node \"C:\\\\Users\\\\kkksu\\\\OneDrive\\\\Desktop\\\\ai����\\\\.claude\\\\skills\\\\semiclass-brand-vibecoding-coach\\\\scripts\\\\progress.mjs\" scan \"C:\\\\Users\\\\kkksu\\\\OneDrive\\\\Desktop\\\\ai����\")"
+    ]
+  }
+}

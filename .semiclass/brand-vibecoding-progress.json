@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "course": "semiclass-brand-website-vibecoding",
+  "createdAt": "2026-06-27T00:00:00.000Z",
+  "updatedAt": "2026-06-27T00:00:00.000Z",
+  "publicUrl": null,
+  "stages": [
+    { "id": "prepare", "status": "done", "note": "브리프와 프로젝트 폴더 준비 완료", "updatedAt": "2026-06-27T00:00:00.000Z" },
+    { "id": "local", "status": "done", "note": "index.html / css / js 로컬 파일 생성 완료", "updatedAt": "2026-06-27T00:00:00.000Z" },
+    { "id": "preview", "status": "doing", "note": "로컬에 Node/Python 미설치 → dev server 대신 index.html 직접 열어 확인", "updatedAt": "2026-06-27T00:00:00.000Z" },
+    { "id": "content", "status": "done", "note": "Hero 카피, 여행지/장소 mock, 다크그린+세리프 스타일, 반응형 1차 완료", "updatedAt": "2026-06-27T00:00:00.000Z" },
+    { "id": "git", "status": "todo", "note": "", "updatedAt": null },
+    { "id": "github", "status": "todo", "note": "", "updatedAt": null },
+    { "id": "vercel", "status": "todo", "note": "", "updatedAt": null },
+    { "id": "qa", "status": "todo", "note": "", "updatedAt": null },
+    { "id": "next", "status": "locked", "note": "이번 수업에서는 Supabase 구현을 시작하지 않음 (store.js만 교체하면 연동 가능)", "updatedAt": "2026-06-27T00:00:00.000Z" }
+  ],
+  "signals": {
+    "packageJson": false,
+    "devScript": false,
+    "buildScript": false,
+    "sourceFiles": true,
+    "gitDir": false,
+    "gitCommit": false,
+    "gitRemote": null,
+    "githubRemote": false,
+    "vercelProject": false,
+    "publicUrl": null
+  }
+}

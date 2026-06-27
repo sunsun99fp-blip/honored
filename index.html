@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Honored · 시니어 여행 일정 플래너</title>
+    <meta
+      name="description"
+      content="인기 여행지부터 주변 맛집·카페·볼거리까지 한 번에 찾아 나만의 여행 일정표를 만드는 곳, Honored."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#/" aria-label="Honored 홈으로">
+          <span class="brand-mark">Honored</span>
+          <span class="brand-sub">시니어 여행 일정</span>
+        </a>
+        <nav class="main-nav" aria-label="주요 메뉴">
+          <a href="#/" class="nav-link" data-nav="home">여행지 둘러보기</a>
+          <a href="#/itinerary" class="nav-link nav-itinerary" data-nav="itinerary">
+            내 일정표
+            <span class="badge" id="navBadge" hidden>0</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="app" class="app-main"><!-- 화면이 여기에 렌더링됩니다 --></main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="footer-brand">Honored</p>
+        <p class="footer-text">
+          여행지부터 주변 맛집·볼거리까지, 나만의 여행 일정을 만들어보세요.
+        </p>
+        <p class="footer-fine">
+          로그인 없이 누구나 이용할 수 있습니다 · 일정표는 이 브라우저에 저장됩니다.
+        </p>
+      </div>
+    </footer>
+
+    <!-- 데이터 → 저장소 → 앱 순서로 불러옵니다 (빌드 불필요) -->
+    <script src="js/data.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
